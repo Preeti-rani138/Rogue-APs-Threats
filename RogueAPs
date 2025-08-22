@@ -1,0 +1,23 @@
+from scapy.all import *
+import time
+
+# Store discovered access points
+access_points = {}
+
+def packet_handler(packet):
+    if packet.haslayer(Dot11Beacon):
+        ssid = packet[Dot11Elt].info.decode()
+        bssid = packet[Dot11].addr2
+        
+        if ssid not in access_points:
+            access_points[ssid] = [bssid]
+            print(f"[+] Detected SSID: {ssid} | BSSID: {bssid}")
+        elif bssid not in access_points[ssid]:
+            access_points[ssid].append(bssid)
+            print(f"[!] WARNING: Duplicate SSID '{ssid}' found with different BSSID: {bssid} - Possible Rogue AP")
+
+# Interface must be in monitor mode
+interface = "wlan0mon"  # change to your Wi-Fi interface
+
+print("[*] Scanning for Access Points...")
+sniff(iface=interface, prn=packet_handler, timeout=60)
